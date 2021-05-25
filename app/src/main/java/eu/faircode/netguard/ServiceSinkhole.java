@@ -156,9 +156,11 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
 
     private volatile Looper commandLooper;
     private volatile Looper logLooper;
+    private volatile Looper tlsLooper;
     private volatile Looper statsLooper;
     private volatile CommandHandler commandHandler;
     private volatile LogHandler logHandler;
+    private volatile TlsHandler tlsHandler;
     private volatile StatsHandler statsHandler;
 
     private static final int NOTIFY_ENFORCING = 1;
@@ -185,6 +187,7 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
     private static final int MSG_STATS_UPDATE = 3;
     private static final int MSG_PACKET = 4;
     private static final int MSG_USAGE = 5;
+    private static final int MSG_TLS_INSPECTION = 6;
 
     private enum State {none, waiting, enforcing, stats}
 
@@ -838,6 +841,244 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
                 }
             }
         }
+    }
+
+    private final class TlsHandler extends Handler {
+        public int queue = 0;
+
+        private static final int MAX_QUEUE = 1000;
+
+        public TlsHandler(Looper looper) {
+            super(looper);
+        }
+
+        public void queue(Packet packet) {
+            Message msg = obtainMessage();
+            msg.obj = packet;
+            msg.what = MSG_TLS_INSPECTION;
+            msg.arg1 = (last_connected ? (last_metered ? 2 : 1) : 0);
+            msg.arg2 = (last_interactive ? 1 : 0);
+
+            synchronized (this) {
+                if (queue > MAX_QUEUE) {
+                    Log.w(TAG, "Log queue full");
+                    return;
+                }
+
+                sendMessage(msg);
+
+                queue++;
+            }
+        }
+
+        public void account(Usage usage) {
+            Message msg = obtainMessage();
+            msg.obj = usage;
+            msg.what = MSG_USAGE;
+
+            synchronized (this) {
+                if (queue > MAX_QUEUE) {
+                    Log.w(TAG, "Log queue full");
+                    return;
+                }
+
+                sendMessage(msg);
+
+                queue++;
+            }
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            try {
+                switch (msg.what) {
+                    case MSG_TLS_INSPECTION:
+                        Packet packet = (Packet) msg.obj;
+                        if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
+                        {
+                            getSupportedCipherSuits(packet);
+                            getSupportedProtocols(packet);
+                        }
+                        break;
+
+                    default:
+                        Log.e(TAG, "Unknown log message=" + msg.what);
+                }
+
+                synchronized (this) {
+                    queue--;
+                }
+
+            } catch (Throwable ex) {
+                Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
+            }
+        }
+        private void getSupportedCipherSuits(Packet packet)
+        {
+            InetAddress host = null;
+            SSLSocket sslSocket = null;
+            try
+            {
+                host = InetAddress.getByName(packet.daddr);
+            } catch (UnknownHostException e)
+            {
+                Log.e(TAG_TLS, "Host is unknown for " + packet.daddr);
+                return;
+            }
+            if (host.isLoopbackAddress() || host.isAnyLocalAddress())
+                return;
+
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            try
+            {
+                sslSocket = (SSLSocket) factory.createSocket(host, packet.dport);
+            } catch (IOException e)
+            {
+                Log.e(TAG_TLS, "Unable to create SSL Socket for " + packet.daddr + "::" + packet.dport);
+                return;
+            }
+
+            String[] supportedCipherSuits = sslSocket.getSupportedCipherSuites();
+            for(String suit : supportedCipherSuits)
+            {
+                if(!DatabaseHelper.getInstance(getApplicationContext()).suitExists(suit))
+                {
+                    DatabaseHelper.getInstance(getApplicationContext()).insertSuit(suit);
+                }
+            }
+
+            for(String suit : supportedCipherSuits)
+            {
+                try
+                {
+                    sslSocket = (SSLSocket)factory.createSocket(host, packet.dport);
+                    sslSocket.addHandshakeCompletedListener(new MyHandshakeCompleteListener(suit));
+                    String[] enabledSuites = {suit};
+                    sslSocket.setEnabledCipherSuites(enabledSuites);
+                    Log.i(TAG_TLS, "Starting Handshake with Suite " + suit + ": for host: " + host.getHostAddress());
+                    sslSocket.startHandshake();
+                } catch (IOException e)
+                {
+                    Log.e(TAG_TLS, "Failed to connect to Socket or did not pass Handshake");
+                } finally {
+                    try
+                    {
+                        if(!sslSocket.isClosed())
+                            sslSocket.close();
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
+                DatabaseHelper.getInstance(getApplicationContext()).insertHost(packet.daddr, packet.dport, host.getHostName());
+
+            Cursor c = DatabaseHelper.getInstance(getApplicationContext()).getHost(packet.daddr, packet.dport);
+            int hostId = -1;
+            if(c.moveToFirst())
+                hostId = c.getInt(c.getColumnIndex("ID"));
+            c.close();
+
+            for(String suit : MyHandshakeCompleteListener.successfulHandshake)
+            {
+                Cursor suitCursor = DatabaseHelper.getInstance(getApplicationContext()).getSuit(suit);
+                int suitId = -1;
+                if(suitCursor.moveToFirst())
+                    suitId = suitCursor.getInt(suitCursor.getColumnIndex("ID"));
+                suitCursor.close();
+                if(suitId == -1 || hostId == -1)
+                    continue;
+                DatabaseHelper.getInstance(getApplicationContext()).insertSupportedSuit(hostId, suitId);
+            }
+
+            MyHandshakeCompleteListener.clearHandshakeList();
+        }
+
+        private void getSupportedProtocols(Packet packet)
+        {
+            InetAddress host = null;
+            SSLSocket sslSocket = null;
+            try
+            {
+                host = InetAddress.getByName(packet.daddr);
+            } catch (UnknownHostException e)
+            {
+                Log.e(TAG_TLS, "Host is unknown for " + packet.daddr);
+                return;
+            }
+
+            if (host.isLoopbackAddress() || host.isAnyLocalAddress())
+                return;
+
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            try
+            {
+                sslSocket = (SSLSocket) factory.createSocket(host, packet.dport);
+            } catch (IOException e)
+            {
+                Log.e(TAG_TLS, "Unable to create SSL Socket for " + packet.daddr + "::" + packet.dport);
+                return;
+            }
+
+            String[] supportedProtocols = sslSocket.getSupportedProtocols();
+            for(String protocol : supportedProtocols)
+            {
+                if(!DatabaseHelper.getInstance(getApplicationContext()).protocolExists(protocol))
+                {
+                    DatabaseHelper.getInstance(getApplicationContext()).insertProtocol(protocol);
+                }
+            }
+
+            for(String protocol : supportedProtocols)
+            {
+                try
+                {
+                    sslSocket = (SSLSocket)factory.createSocket(host, packet.dport);
+                    sslSocket.addHandshakeCompletedListener(new MyHandshakeCompleteListener(protocol));
+                    String[] enabledProtocols = {protocol};
+                    sslSocket.setEnabledProtocols(enabledProtocols);
+                    Log.i(TAG_TLS, "Starting Handshake with Protocol " + protocol + " for host " + host.getHostAddress());
+                    sslSocket.startHandshake();
+                } catch (IOException e)
+                {
+                    Log.e(TAG_TLS, "Failed to connect to Socket or did not pass Handshake");
+                } finally {
+                    try
+                    {
+                        if(!sslSocket.isClosed())
+                            sslSocket.close();
+                    } catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
+                DatabaseHelper.getInstance(getApplicationContext()).insertHost(packet.daddr, packet.dport, host.getHostName());
+
+            Cursor c = DatabaseHelper.getInstance(getApplicationContext()).getHost(packet.daddr, packet.dport);
+            int hostId = -1;
+            if(c.moveToFirst())
+                hostId = c.getInt(c.getColumnIndex("ID"));
+            c.close();
+
+            for(String suit : MyHandshakeCompleteListener.successfulHandshake)
+            {
+                Cursor protocolCursor = DatabaseHelper.getInstance(getApplicationContext()).getProtocol(suit);
+                int protocolId = -1;
+                if(protocolCursor.moveToFirst())
+                    protocolId = protocolCursor.getInt(protocolCursor.getColumnIndex("ID"));
+                protocolCursor.close();
+                if(protocolId == -1 || hostId == -1)
+                    continue;
+                DatabaseHelper.getInstance(getApplicationContext()).insertSupportedProtocol(hostId, protocolId);
+            }
+            MyHandshakeCompleteListener.clearHandshakeList();
+        }
+
     }
 
     private final class StatsHandler extends Handler {
@@ -1860,177 +2101,8 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
 
     // Called from native code
     private void logPacket(Packet packet) {
-        if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
-        {
-            getSupportedCipherSuits(packet);
-            getSupportedProtocols(packet);
-        }
-
+        tlsHandler.queue(packet);
         logHandler.queue(packet);
-    }
-
-    private void getSupportedCipherSuits(Packet packet)
-    {
-        InetAddress host = null;
-        SSLSocket sslSocket = null;
-        try
-        {
-            host = InetAddress.getByName(packet.daddr);
-        } catch (UnknownHostException e)
-        {
-            Log.e(TAG_TLS, "Host is unknown for " + packet.daddr);
-            return;
-        }
-        if (host.isLoopbackAddress() || host.isAnyLocalAddress())
-            return;
-
-        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        try
-        {
-            sslSocket = (SSLSocket) factory.createSocket(host, packet.dport);
-        } catch (IOException e)
-        {
-            Log.e(TAG_TLS, "Unable to create SSL Socket for " + packet.daddr + "::" + packet.dport);
-            return;
-        }
-
-        String[] supportedCipherSuits = sslSocket.getSupportedCipherSuites();
-        for(String suit : supportedCipherSuits)
-        {
-            if(!DatabaseHelper.getInstance(getApplicationContext()).suitExists(suit))
-            {
-                DatabaseHelper.getInstance(getApplicationContext()).insertSuit(suit);
-            }
-        }
-
-        for(String suit : supportedCipherSuits)
-        {
-            try
-            {
-                sslSocket = (SSLSocket)factory.createSocket(host, packet.dport);
-                sslSocket.addHandshakeCompletedListener(new MyHandshakeCompleteListener(suit));
-                String[] enabledSuites = {suit};
-                sslSocket.setEnabledCipherSuites(enabledSuites);
-                Log.i(TAG_TLS, "Starting Handshake with Suite " + suit + ": for host: " + host.getHostAddress());
-                sslSocket.startHandshake();
-            } catch (IOException e)
-            {
-                Log.e(TAG_TLS, "Failed to connect to Socket or did not pass Handshake");
-            } finally {
-                try
-                {
-                    if(!sslSocket.isClosed())
-                        sslSocket.close();
-                } catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
-            DatabaseHelper.getInstance(getApplicationContext()).insertHost(packet.daddr, packet.dport, host.getHostName());
-
-        Cursor c = DatabaseHelper.getInstance(getApplicationContext()).getHost(packet.daddr, packet.dport);
-        int hostId = -1;
-        if(c.moveToFirst())
-            hostId = c.getInt(c.getColumnIndex("ID"));
-        c.close();
-
-        for(String suit : MyHandshakeCompleteListener.successfulHandshake)
-        {
-            Cursor suitCursor = DatabaseHelper.getInstance(getApplicationContext()).getSuit(suit);
-            int suitId = -1;
-            if(suitCursor.moveToFirst())
-                suitId = suitCursor.getInt(suitCursor.getColumnIndex("ID"));
-            suitCursor.close();
-            if(suitId == -1 || hostId == -1)
-                continue;
-            DatabaseHelper.getInstance(getApplicationContext()).insertSupportedSuit(hostId, suitId);
-        }
-    }
-
-    private void getSupportedProtocols(Packet packet)
-    {
-        InetAddress host = null;
-        SSLSocket sslSocket = null;
-        try
-        {
-            host = InetAddress.getByName(packet.daddr);
-        } catch (UnknownHostException e)
-        {
-            Log.e(TAG_TLS, "Host is unknown for " + packet.daddr);
-            return;
-        }
-
-        if (host.isLoopbackAddress() || host.isAnyLocalAddress())
-            return;
-
-        SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-        try
-        {
-            sslSocket = (SSLSocket) factory.createSocket(host, packet.dport);
-        } catch (IOException e)
-        {
-            Log.e(TAG_TLS, "Unable to create SSL Socket for " + packet.daddr + "::" + packet.dport);
-            return;
-        }
-
-        String[] supportedProtocols = sslSocket.getSupportedProtocols();
-        for(String protocol : supportedProtocols)
-        {
-            if(!DatabaseHelper.getInstance(getApplicationContext()).protocolExists(protocol))
-            {
-                DatabaseHelper.getInstance(getApplicationContext()).insertProtocol(protocol);
-            }
-        }
-
-        for(String protocol : supportedProtocols)
-        {
-            try
-            {
-                sslSocket = (SSLSocket)factory.createSocket(host, packet.dport);
-                sslSocket.addHandshakeCompletedListener(new MyHandshakeCompleteListener(protocol));
-                String[] enabledProtocols = {protocol};
-                sslSocket.setEnabledProtocols(enabledProtocols);
-                Log.i(TAG_TLS, "Starting Handshake with Protocol " + protocol + " for host " + host.getHostAddress());
-                sslSocket.startHandshake();
-            } catch (IOException e)
-            {
-                Log.e(TAG_TLS, "Failed to connect to Socket or did not pass Handshake");
-            } finally {
-                try
-                {
-                    if(!sslSocket.isClosed())
-                        sslSocket.close();
-                } catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
-            DatabaseHelper.getInstance(getApplicationContext()).insertHost(packet.daddr, packet.dport, host.getHostName());
-
-        Cursor c = DatabaseHelper.getInstance(getApplicationContext()).getHost(packet.daddr, packet.dport);
-        int hostId = -1;
-        if(c.moveToFirst())
-            hostId = c.getInt(c.getColumnIndex("ID"));
-        c.close();
-
-        for(String suit : MyHandshakeCompleteListener.successfulHandshake)
-        {
-            Cursor protocolCursor = DatabaseHelper.getInstance(getApplicationContext()).getProtocol(suit);
-            int protocolId = -1;
-            if(protocolCursor.moveToFirst())
-                protocolId = protocolCursor.getInt(protocolCursor.getColumnIndex("ID"));
-            protocolCursor.close();
-            if(protocolId == -1 || hostId == -1)
-                continue;
-            DatabaseHelper.getInstance(getApplicationContext()).insertSupportedProtocol(hostId, protocolId);
-        }
-        MyHandshakeCompleteListener.clearHandshakeList();
     }
 
     // Called from native code
@@ -2580,16 +2652,20 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
         HandlerThread commandThread = new HandlerThread(getString(R.string.app_name) + " command", Process.THREAD_PRIORITY_FOREGROUND);
         HandlerThread logThread = new HandlerThread(getString(R.string.app_name) + " log", Process.THREAD_PRIORITY_BACKGROUND);
         HandlerThread statsThread = new HandlerThread(getString(R.string.app_name) + " stats", Process.THREAD_PRIORITY_BACKGROUND);
+        HandlerThread tlsThread = new HandlerThread(getString(R.string.app_name) + " tls inspection", Process.THREAD_PRIORITY_DEFAULT);
         commandThread.start();
         logThread.start();
         statsThread.start();
+        tlsThread.start();
 
         commandLooper = commandThread.getLooper();
         logLooper = logThread.getLooper();
         statsLooper = statsThread.getLooper();
+        tlsLooper = tlsThread.getLooper();
 
         commandHandler = new CommandHandler(commandLooper);
         logHandler = new LogHandler(logLooper);
+        tlsHandler = new TlsHandler(tlsLooper);
         statsHandler = new StatsHandler(statsLooper);
 
         // Listen for user switches
