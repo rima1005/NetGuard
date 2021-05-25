@@ -280,6 +280,7 @@
     <string name="title_pro_subscription">        Месечна претплата у износу од 1 или 2 € (без пореза) активираће све профи могућности.
         Претплату можете отказати или управљати њоме преко језичка Претплате у Плеј продавници.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>тиркизно/наранџасто</item>
         <item>плаво/наранџасто</item>

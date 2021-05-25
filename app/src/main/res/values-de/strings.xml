@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Ein monatliches Abonnement von 1 oder 2 Euro (ohne lokale Steuern) aktiviert alle Pro-Funktionen.
         Sie können ein Abonnement über die Registerkarte Abonnements in der Play Store App kündigen oder verwalten.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>Blaugrün/Orange</item>
         <item>Blau/Orange</item>

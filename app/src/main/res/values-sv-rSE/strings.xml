@@ -280,6 +280,7 @@ Din internettrafik skickas inte till en avlägsen VPN-server.</string>
     <string name="title_pro_subscription">        Ett månatlig abonnemang på 1 eller 2 euro (exklusive lokala skatter) aktiverar alla profunktioner.
         Du kan avbryta eller hantera ett abonnemang via abonnemangsfliken i appen Play store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>teal/orange</item>
         <item>blå/orange</item>

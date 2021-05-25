@@ -34,6 +34,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.ImageSpan;
@@ -797,6 +798,14 @@ public class AdapterRule extends RecyclerView.Adapter<AdapterRule.ViewHolder> im
                                     ClipboardManager clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
                                     ClipData clip = ClipData.newPlainText("netguard", daddr);
                                     clipboard.setPrimaryClip(clip);
+                                    return true;
+                                case R.id.menu_cipher:
+                                    Intent intent = new Intent(context, ActivityCipher.class);
+                                    Bundle b = new Bundle();
+                                    b.putString("address", daddr);
+                                    b.putInt("port", dport);
+                                    intent.putExtras(b);
+                                    context.startActivity(intent);
                                     return true;
                             }
 

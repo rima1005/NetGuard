@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Miesięczne subskrypcje w wysokości 1 lub 2 euro (nie licząc lokalnego opodatkowania) aktywują wszystkie funkcje pro.
         Możesz anulować lub zarządzać subskrypcją w zakładce subskrypcji w aplikacji Sklep Play.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>teal/orange</item>
         <item>blue/orange</item>

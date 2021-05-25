@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Un abbonamento mensile di 1 o 2 euro (escluse le tasse locali) attiverà tutte le funzionalità pro.
         È possibile annullare o gestire un abbonamento tramite la scheda abbonamenti nell\'app del Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>foglia di tè/arancione</item>
         <item>blu/arancione</item>

@@ -277,6 +277,7 @@
     <string name="title_pro_feature">זוהי יכולת של גירסת ה-pro</string>
     <string name="title_pro_subscription">מנוי חודשי של 1 או 2 יורו (לפני מיסים) יפעיל את כל יכולות גירסת ה-pro.
 יש באפשרותך לבטל את המנוי דרך טאב הממויים של ה-Play Store (חנות האפליקציות של גוגל).    </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>טורקיז/כתום</item>
         <item>כחול/כתום</item>

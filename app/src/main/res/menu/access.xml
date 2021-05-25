@@ -28,4 +28,8 @@
         android:id="@+id/menu_time"
         android:enabled="false"
         android:title="" />
+    <item
+        android:id="@+id/menu_cipher"
+        android:enabled="true"
+        android:title="@string/cipher_suite" />
 </menu>

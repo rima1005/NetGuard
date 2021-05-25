@@ -278,6 +278,7 @@ Votre trafic Internet n\'est pas envoyé vers un serveur VPN distant.</string>
     <string name="title_pro_subscription">        Un abonnement mensuel de 1 à 2 euros (hors taxes locales) activera toutes les fonctionnalités Pro.
         Vous pouvez annuler ou gérer un abonnement via l\'onglet Abonnements dans l\'application Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>bleu sarcelle/orange</item>
         <item>bleu/orange</item>

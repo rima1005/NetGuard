@@ -279,6 +279,7 @@ Je internetverkeer wordt niet naar een externe VPN-server gestuurd.</string>
     <string name="title_pro_subscription">        Een maandelijks abonnement van één of twee euro (exclusief belasting) activeert alle pro-functies.
         Je kunt je abonnement opzeggen of beheren via het tabblad \'Abonnementen\' in de Google Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>groenblauw/oranje</item>
         <item>blauw/oranje</item>

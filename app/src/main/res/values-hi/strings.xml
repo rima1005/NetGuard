@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        1 या 2 यूरो (स्थानीय कर को छोड़कर) की मासिक सदस्यता सभी प्रो सुविधाओं को सक्रिय करेगी।
         आप प्ले स्टोर ऐप में सदस्यता टैब के माध्यम से सदस्यता को रद्द या प्रबंधित कर सकते हैं।
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>चैती / नारंगी</item>
         <item>नीला/ नारंगी</item>

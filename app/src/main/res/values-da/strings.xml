@@ -280,6 +280,7 @@ Aktivér venligst indstillingerne \"Baggrundsdata\" og \"Ubegrænset dataforbrug
     <string name="title_pro_subscription">        Et månedligt abonnement på 1 eller 2 euro (ekskl. lokal moms) vil aktivere alle Pro-funktioner.
         Du kan afmelde eller håndtere et abonnement via fanen Abonnementer i Play Butik-appen.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>blågrøn/orange</item>
         <item>blå/orange</item>

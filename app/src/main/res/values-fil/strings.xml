@@ -278,6 +278,7 @@ Ang iyong daloy ng internet ay hindi naipadala sa malayong serber ng VPN.</strin
     <string name="title_pro_subscription">        A monthly subscriptions of 1 or 2 euros (excluding local taxes) will activate all pro features.
         You can cancel or manage a subscription via the subscriptions tab in the Play store app.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>tial/kahel</item>
         <item>kulay asul/kahel</item>

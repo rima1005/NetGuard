@@ -12,18 +12,17 @@
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!-- http://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
-
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" /> <!-- http://developer.android.com/guide/topics/security/permissions.html#normal-dangerous -->
     <!-- https://developer.android.com/preview/privacy/package-visibility -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <!--queries>
+    <!--
+queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
         </intent>
-    </queries-->
-
+    </queries
+    -->
     <permission
         android:name="eu.faircode.netguard.permission.ADMIN"
         android:description="@string/app_description"
@@ -46,7 +45,7 @@
         android:required="false" />
 
     <application
-        android:name="ApplicationEx"
+        android:name=".ApplicationEx"
         android:allowBackup="false"
         android:appCategory="productivity"
         android:description="@string/app_description"
@@ -56,6 +55,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppThemeTeal"
         tools:ignore="ManifestResource">
+        <activity android:name=".ActivityCipher"></activity>
 
         <meta-data
             android:name="android.max_aspect"
@@ -69,13 +69,16 @@
             android:resizeableActivity="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.MANAGE_NETWORK_USAGE" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-            <!-- intent-filter android:label="@string/app_name">
+            <!--
+            intent-filter android:label="@string/app_name">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />
@@ -85,13 +88,13 @@
                     android:host="www.netguard.me"
                     android:pathPrefix="/"
                     android:scheme="https" />
-            </intent-filter-->
+            </intent-filter
+            -->
 
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
-
         <activity
             android:name=".ActivitySettings"
             android:configChanges="orientation|screenSize"
@@ -102,6 +105,7 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
 
@@ -109,7 +113,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ActivityMain" />
         </activity>
-
         <activity
             android:name=".ActivityLog"
             android:configChanges="orientation|screenSize"
@@ -119,7 +122,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ActivityMain" />
         </activity>
-
         <activity
             android:name=".ActivityPro"
             android:configChanges="orientation|screenSize"
@@ -129,7 +131,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ActivityMain" />
         </activity>
-
         <activity
             android:name=".ActivityDns"
             android:configChanges="orientation|screenSize"
@@ -139,7 +140,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ActivitySettings" />
         </activity>
-
         <activity
             android:name=".ActivityForwarding"
             android:configChanges="orientation|screenSize"
@@ -149,7 +149,6 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ActivitySettings" />
         </activity>
-
         <activity
             android:name=".ActivityForwardApproval"
             android:configChanges="orientation|screenSize"
@@ -169,7 +168,6 @@
                 <action android:name="android.net.VpnService" />
             </intent-filter>
         </service>
-
         <service
             android:name=".ServiceExternal"
             android:label="@string/app_name">
@@ -177,7 +175,6 @@
                 <action android:name="eu.faircode.netguard.DOWNLOAD_HOSTS_FILE" />
             </intent-filter>
         </service>
-
         <service
             android:name=".ServiceTileMain"
             android:icon="@drawable/ic_security_white_24dp"
@@ -187,7 +184,6 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-
         <service
             android:name=".ServiceTileGraph"
             android:icon="@drawable/ic_equalizer_white_24dp"
@@ -197,7 +193,6 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-
         <service
             android:name=".ServiceTileFilter"
             android:icon="@drawable/ic_filter_list_white_24dp"
@@ -207,7 +202,6 @@
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
             </intent-filter>
         </service>
-
         <service
             android:name=".ServiceTileLockdown"
             android:icon="@drawable/ic_lock_outline_white_24dp"
@@ -226,36 +220,35 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
-
         <receiver android:name=".ReceiverPackageRemoved">
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
+
                 <data android:scheme="package" />
             </intent-filter>
         </receiver>
-
         <receiver
             android:name=".WidgetMain"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widgetmain" />
         </receiver>
-
         <receiver
             android:name=".WidgetLockdown"
             android:label="@string/setting_lockdown">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widgetlockdown" />
         </receiver>
-
         <receiver
             android:name=".WidgetAdmin"
             android:label="@string/app_name"
@@ -268,4 +261,5 @@
             </intent-filter>
         </receiver>
     </application>
+
 </manifest>

@@ -275,6 +275,7 @@
     <string name="title_pro_feature">これはプロ版の機能です</string>
     <string name="title_pro_subscription">1または2ユーロ (地方税を除く) の月額サブスクリプションで、すべてのプロ版の機能を有効にします。
 Playストアアプリの定期購入タブから、定期購入をキャンセルまたは管理できます。    </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>ティール/オレンジ</item>
         <item>ブルー/オレンジ</item>

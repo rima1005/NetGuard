@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Una suscripción mensual de 1 o 2 euros (excluyendo impuestos locales) activará todas las características profesionales.
         Puedes cancelar o administrar una suscripción a través de la pestaña de suscripciones en la aplicación Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>turquesa/anaranjado</item>
         <item>azul/anaranjado</item>

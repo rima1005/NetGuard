@@ -280,6 +280,7 @@
     <string name="title_pro_subscription">        اشتراک ماهانه 1 یا 2 یورو (به استثنای مالیات محلی) تمام ویژگی‌های حرفه‌ای را فعال می‌کند. 
         می توانید اشتراک را از طریق برگه اشتراک در برنامه فروشگاه Play لغو یا مدیریت کنید.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>آبی دریایی/نارنجی</item>
         <item>آبی/نارنجی</item>

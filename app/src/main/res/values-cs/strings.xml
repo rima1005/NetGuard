@@ -280,6 +280,7 @@ Váš internetový provoz není odesílán žádnému vzdálenému VPN serveru.<
     <string name="title_pro_subscription">        Měsíční předplatné ve výši 1 nebo 2 EUR (bez DPH) aktivuje všechny Pro funkce.
         Předplatné můžete zrušit nebo spravovat skrze záložku předplatné v aplikaci Obchod Play.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>modro-zelená/oranžová</item>
         <item>modrá/oranžová</item>

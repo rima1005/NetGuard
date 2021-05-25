@@ -280,6 +280,7 @@
     <string name="title_pro_subscription">每月订阅1或2欧元（不包括地方税）将激活所有专业功能。
         您可以通过Play商店应用中的“订阅”标签取消或管理订阅。
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>蓝绿色/橙色</item>
         <item>蓝色/橙色</item>

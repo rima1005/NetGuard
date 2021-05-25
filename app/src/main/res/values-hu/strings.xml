@@ -278,6 +278,7 @@ Az internetes forgalom nem érkezik meg a távoli VPN kiszolgálóhoz.</string>
     <string name="title_pro_subscription">        Egy havi 1 vagy 2 eurós előfizetéssel (hely adók levonásával) lehet aktiválni a pro funkciókat.
         Az előfizetést a Play Áruház előfizetések oldalán tudja megszüntetni vagy kezelni.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>zöldeskék/narancssárga</item>
         <item>kék/narancssárga</item>

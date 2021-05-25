@@ -278,6 +278,7 @@
     <string name="title_pro_subscription">        Ежемесячная подписка за 1 или 2 евро (без учета местных налогов) активирует все функции Pro.
         Вы можете отменить или управлять подпиской через вкладку подписок в Google Play Маркет.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>бирюзовый/оранжевый</item>
         <item>синий/оранжевый</item>

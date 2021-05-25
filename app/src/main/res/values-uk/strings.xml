@@ -277,6 +277,7 @@
     <string name="title_pro_subscription">        Щомісячна підписка на 1 або 2 євро (без врахування місцевих податків) активує всі професійні функції.
         Ви можете скасувати або керувати підпискою через вкладку Підписки в додатку Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>бірюзовий/рудий</item>
         <item>синій/помаранчевий</item>

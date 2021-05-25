@@ -278,6 +278,7 @@
     <string name="title_pro_subscription">        1 tai 2 euron kuukausitilaus (paikallisia veroja lukuun ottamatta) aktivoi kaikki pro-ominaisuudet.
         Voit peruuttaa tilauksen tai hallita sitä Play-kauppa sovelluksen tilausvälilehdeltä.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>sinivihreä/oranssi</item>
         <item>sininen/oranssi</item>

@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Một gói đăng ký 1 hoặc 2 euro (chưa bao gồm thuế ở địa phương) sẽ kích hoạt tất cả tính năng pro.
         Bạn có thể huỷ hoặc quản lý gói đăng ký qua tab gói đăng ký trong ứng dụng CH Play.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>xanh mòng két/cam</item>
         <item>xanh dương/cam</item>

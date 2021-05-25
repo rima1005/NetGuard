@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        اشتراكات شهرية بقيمة ١  أو ٢ يورو (باستثناء الضرائب المحلية) ستفعل كافة الميزات المحترفة.
         يمكنك إلغاء أو إدارة اشتراك عبر لسان الاشتراكات في تطبيق Play store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>أزرق مخضر/برتقالي</item>
         <item>أزرق/برتقالي</item>

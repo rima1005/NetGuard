@@ -46,7 +46,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "NetGuard.Database";
 
     private static final String DB_NAME = "Netguard";
-    private static final int DB_VERSION = 21;
+    private static final int DB_VERSION = 23;
 
     private static boolean once = true;
     private static List<LogChangedListener> logChangedListeners = new ArrayList<>();
@@ -61,6 +61,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private final static int MSG_LOG = 1;
     private final static int MSG_ACCESS = 2;
     private final static int MSG_FORWARD = 3;
+    private final static int MSG_HOSTS = 4;
+    private final static int MSG_PROTOCOLS = 5;
+    private final static int MSG_SUITS = 6;
+    private final static int MSG_SUPPORTED_SUITS = 7;
+    private final static int MSG_SUPPORTED_PROTOCOLS = 8;
 
     private SharedPreferences prefs;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
@@ -124,6 +129,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         createTableDns(db);
         createTableForward(db);
         createTableApp(db);
+        createTableHosts(db);
+        createTableSuits(db);
+        createTableProtocols(db);
+        createTableSupportedSuits(db);
+        createTableSupportedProtocols(db);
     }
 
     @Override
@@ -218,6 +228,63 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ");");
         db.execSQL("CREATE UNIQUE INDEX idx_package ON app(package)");
     }
+
+    private void createTableHosts(SQLiteDatabase db)
+    {
+        Log.i(TAG, "Creating hosts table");
+        db.execSQL("CREATE TABLE hosts ("+
+                " ID INTEGER PRIMARY KEY AUTOINCREMENT" +
+                ", host TEXT NOT NULL" +
+                ", port TEXT NOT NULL" +
+                ", hostname TEXT" +
+                ");");
+        db.execSQL("CREATE UNIQUE INDEX idx_host ON hosts(host, port)");
+    }
+
+    private void createTableSuits(SQLiteDatabase db)
+    {
+        Log.i(TAG, "Creating Suits table");
+        db.execSQL("CREATE TABLE suits ("+
+                " ID INTEGER PRIMARY KEY AUTOINCREMENT" +
+                ", name TEXT NOT NULL" +
+                ");");
+        db.execSQL("CREATE UNIQUE INDEX idx_suit ON suits(name)");
+    }
+
+    private void createTableProtocols(SQLiteDatabase db)
+    {
+        Log.i(TAG, "Creating Protocols table");
+        db.execSQL("CREATE TABLE protocols (" +
+                "ID INTEGER PRIMARY KEY AUTOINCREMENT" +
+                ", name TEXT NOT NULL" +
+                ");");
+
+        db.execSQL("CREATE UNIQUE INDEX idx_protocol ON protocols(name)");
+    }
+
+    private void createTableSupportedSuits(SQLiteDatabase db)
+    {
+        Log.i(TAG, "Creating Supported Suits table");
+        db.execSQL("CREATE TABLE supportedSuits ("+
+                "ID INTEGER PRIMARY KEY AUTOINCREMENT" +
+                ", hostID INTEGER NOT NULL" +
+                ", suitID INTEGER NOT NULL" +
+                ");");
+
+        db.execSQL("CREATE UNIQUE INDEX idx_supportedSuits ON supportedSuits(hostID, suitID)");
+    }
+
+    private void createTableSupportedProtocols(SQLiteDatabase db)
+    {
+        Log.i(TAG, "Creating Supported Protocols table");
+        db.execSQL("CREATE TABLE supportedProtocols ("+
+                "ID INTEGER PRIMARY KEY AUTOINCREMENT" +
+                ", hostID INTEGER NOT NULL" +
+                ", protocolID INTEGER NOT NULL" +
+                ");");
+        db.execSQL("CREATE UNIQUE INDEX idx_supportedProtocols ON supportedProtocols(hostID, protocolID)");
+    }
+
 
     private boolean columnExists(SQLiteDatabase db, String table, String column) {
         Cursor cursor = null;
@@ -346,6 +413,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 createTableApp(db);
                 oldVersion = 21;
             }
+            if (oldVersion < 22)
+            {
+                createTableHosts(db);
+                createTableProtocols(db);
+                createTableSuits(db);
+                createTableSupportedProtocols(db);
+                createTableSupportedSuits(db);
+                oldVersion = 22;
+            }
+            if (oldVersion < 23)
+            {
+                db.execSQL("ALTER TABLE hosts ADD COLUMN hostname TEXT");
+                oldVersion = 23;
+            }
 
             if (oldVersion == DB_VERSION) {
                 db.setVersion(oldVersion);
@@ -360,6 +441,264 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             db.endTransaction();
         }
     }
+
+    public void insertHost(String daddr, int port, String hostname)
+    {
+        lock.writeLock().lock();
+        try{
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.beginTransactionNonExclusive();
+            try{
+                ContentValues cv = new ContentValues();
+                cv.put("host", daddr);
+                cv.put("port", port);
+                cv.put("hostname", hostname);
+                if(db.insert("hosts", null, cv) == -1)
+                    Log.e(TAG, "Insert Host failed!");
+
+                db.setTransactionSuccessful();
+
+            }
+            finally {
+                db.endTransaction();
+            }
+        }finally {
+            lock.writeLock().unlock();
+        }
+        notifyHostChanged();
+    }
+
+    public void insertProtocol(String protocol)
+    {
+        lock.writeLock().lock();
+        try{
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.beginTransactionNonExclusive();
+            try{
+                ContentValues cv = new ContentValues();
+                cv.put("name", protocol);
+
+                if(db.insert("protocols", null, cv) == -1)
+                    Log.e(TAG, "Could not insert Protocol");
+
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void insertSuit(String suit)
+    {
+        lock.writeLock().lock();
+        try{
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.beginTransactionNonExclusive();
+            try{
+                ContentValues cv = new ContentValues();
+                cv.put("name", suit);
+
+                if(db.insert("suits", null, cv) == -1)
+                    Log.e(TAG, "Could not insert Suit");
+
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void insertSupportedProtocol(int HostId, int protocolId)
+    {
+        lock.writeLock().lock();
+        try{
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.beginTransactionNonExclusive();
+            try{
+                ContentValues cv = new ContentValues();
+                cv.put("hostID", HostId);
+                cv.put("protocolID", protocolId);
+
+                if(db.insert("supportedProtocols", null, cv) == -1)
+                    Log.e(TAG, "Could not insert supported protocol");
+
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public void insertSupportedSuit(int HostId, int suitId)
+    {
+        lock.writeLock().lock();
+        try{
+            SQLiteDatabase db = this.getWritableDatabase();
+            db.beginTransactionNonExclusive();
+            try{
+                ContentValues cv = new ContentValues();
+                cv.put("hostID", HostId);
+                cv.put("suitID", suitId);
+
+                if(db.insert("supportedSuits", null, cv) == -1)
+                    Log.e(TAG, "Could not insert supported suit");
+
+                db.setTransactionSuccessful();
+            } finally {
+                db.endTransaction();
+            }
+        }finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public Cursor getHost(String addr, int port)
+    {
+        lock.readLock().lock();
+        try{
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT * FROM hosts WHERE host = ? OR hostname = ? AND port = " + port;
+            return db.rawQuery(queryString, new String[]{addr, addr});
+        }finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public Cursor getSuit(String name)
+    {
+        lock.readLock().lock();
+        try {
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT * FROM suits WHERE name = ?";
+            return db.rawQuery(queryString, new String[]{name});
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public boolean suitExists(String name)
+    {
+        lock.readLock().lock();
+        boolean exists = false;
+        try{
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT COUNT(name) as existing FROM suits WHERE name = ?";
+            Cursor c = db.rawQuery(queryString, new String[]{name});
+            if(!c.moveToFirst())
+                exists = false;
+            else
+            {
+                int count = c.getInt(c.getColumnIndex("existing"));
+                if(count <= 0)
+                    exists = false;
+                else
+                    exists = true;
+            }
+        } finally {
+            lock.readLock().unlock();
+
+        }
+        return exists;
+    }
+
+    public boolean protocolExists(String name)
+    {
+        lock.readLock().lock();
+        boolean exists = false;
+        try{
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT COUNT(name) as existing FROM protocols WHERE name = ?";
+            Cursor c = db.rawQuery(queryString, new String[]{name});
+            if(!c.moveToFirst())
+                exists = false;
+            else
+            {
+                int count = c.getInt(c.getColumnIndex("existing"));
+                if(count <= 0)
+                    exists = false;
+                else
+                    exists = true;
+            }
+        } finally {
+            lock.readLock().unlock();
+
+        }
+        return exists;
+    }
+
+    public boolean hostexists(String host, int port)
+    {
+        lock.readLock().lock();
+        boolean exists = false;
+        try{
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT COUNT(host) as existing FROM hosts WHERE host = ? AND port = " + port;
+            Cursor c = db.rawQuery(queryString, new String[]{host});
+            if(!c.moveToFirst())
+                exists = false;
+            else
+            {
+                int count = c.getInt(c.getColumnIndex("existing"));
+                if(count <= 0)
+                    exists = false;
+                else
+                    exists = true;
+            }
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally {
+            lock.readLock().unlock();
+
+        }
+        return exists;
+    }
+
+
+    public Cursor getProtocol(String name)
+    {
+        lock.readLock().lock();
+        try {
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT * FROM protocols WHERE name = ?";
+            return db.rawQuery(queryString, new String[]{name});
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public Cursor getSupportedSuits(int hostId)
+    {
+        lock.readLock().lock();
+        try {
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT ss.suitID, s.name FROM supportedSuits as ss INNER JOIN suits AS s ON s.ID = ss.suitID WHERE hostID = " + hostId;
+            return db.rawQuery(queryString, new String[]{});
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public Cursor getSupportedProtocols(int hostId)
+    {
+        lock.readLock().lock();
+        try {
+            SQLiteDatabase db = getReadableDatabase();
+            String queryString = "SELECT sp.protocolID, p.name FROM supportedProtocols as sp INNER JOIN protocols p ON p.ID = sp.protocolID WHERE hostID = " + hostId;
+            return db.rawQuery(queryString, new String[]{});
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+
 
     // Log
 
@@ -933,6 +1272,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+    public Cursor getAccessDnsAllowed(String dname)
+    {
+        long now = new Date().getTime();
+        lock.readLock().lock();
+        try {
+            SQLiteDatabase db = this.getReadableDatabase();
+
+            // There is a segmented index on dns.qname
+            // There is an index on access.daddr and access.block
+            String query = "SELECT resource";
+            query += " FROM dns WHERE";
+            query += " time IS NULL OR time + ttl >= " + now;
+            if (dname != null)
+                query += " AND qname = ?";
+
+            return db.rawQuery(query, dname == null ? new String[]{} : new String[]{dname});
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
     // Forward
 
     public void addForward(int protocol, int dport, String raddr, int rport, int ruid) {
@@ -1111,6 +1471,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private void notifyForwardChanged() {
         Message msg = handler.obtainMessage();
         msg.what = MSG_FORWARD;
+        handler.sendMessage(msg);
+    }
+
+    private void notifyHostChanged()
+    {
+        Message msg = handler.obtainMessage();
+        msg.what = MSG_HOSTS;
+        handler.sendMessage(msg);
+    }
+
+    private void notifyProtocolChanged()
+    {
+        Message msg = handler.obtainMessage();
+        msg.what = MSG_PROTOCOLS;
+        handler.sendMessage(msg);
+    }
+
+    private void notifySuitsChanged()
+    {
+        Message msg = handler.obtainMessage();
+        msg.what = MSG_SUITS;
+        handler.sendMessage(msg);
+    }
+
+    private void notifySupportedProtocolChanged()
+    {
+        Message msg = handler.obtainMessage();
+        msg.what = MSG_SUPPORTED_PROTOCOLS;
+        handler.sendMessage(msg);
+    }
+
+    private void notifySupportedSuitChanged()
+    {
+        Message msg = handler.obtainMessage();
+        msg.what = MSG_SUPPORTED_SUITS;
         handler.sendMessage(msg);
     }
 

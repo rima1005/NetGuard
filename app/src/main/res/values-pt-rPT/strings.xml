@@ -276,6 +276,7 @@
     <string name="title_pro_subscription">        Uma assinatura mensal de 1 ou 2 euros (excluindo impostos locais) ativará todos os recursos profissionais.
         Pode cancelar ou gerir a assinatura através do guia de assinaturas na aplicação da Play Store.
     </string>
+    <string name="cipher_suite">Cipher Suite</string>
     <string-array name="themeNames">
         <item>verde-azulado/laranja</item>
         <item>azul/laranja</item>
