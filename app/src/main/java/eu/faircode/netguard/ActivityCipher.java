@@ -2,10 +2,13 @@ package eu.faircode.netguard;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -22,7 +25,6 @@ public class ActivityCipher extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_cipher);
-
         Bundle b = getIntent().getExtras();
         String address = b.getString("address");
         int port = b.getInt("port");
@@ -83,6 +85,14 @@ public class ActivityCipher extends AppCompatActivity {
 
         ListUtils.setDynamicHeight(lvSuits);
         ListUtils.setDynamicHeight(lvProtocols);
+
+        lvSuits.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent webInfo = new Intent(Intent.ACTION_VIEW, Uri.parse("https://ciphersuite.info/cs/" + parent.getItemAtPosition(position).toString()));
+                startActivity(webInfo);
+            }
+        });
     }
 
     public static class ListUtils {
