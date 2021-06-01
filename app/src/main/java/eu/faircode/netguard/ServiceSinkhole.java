@@ -896,6 +896,7 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
                         Packet packet = (Packet) msg.obj;
                         if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
                         {
+                            getHandshakeDetails(packet);
                             getSupportedCipherSuits(packet);
                             getSupportedProtocols(packet);
                         }
@@ -913,6 +914,62 @@ public class ServiceSinkhole extends VpnService implements SharedPreferences.OnS
                 Log.e(TAG, ex.toString() + "\n" + Log.getStackTraceString(ex));
             }
         }
+
+        private void getHandshakeDetails(Packet packet)
+        {
+            InetAddress host = null;
+            SSLSocket sslSocket = null;
+            try
+            {
+                host = InetAddress.getByName(packet.daddr);
+            } catch (UnknownHostException e)
+            {
+                Log.e(TAG_TLS, "Host is unknown for " + packet.daddr);
+                return;
+            }
+            if (host.isLoopbackAddress() || host.isAnyLocalAddress())
+                return;
+
+            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+            try
+            {
+                sslSocket = (SSLSocket) factory.createSocket(host, packet.dport);
+            } catch (IOException e)
+            {
+                Log.e(TAG_TLS, "Unable to create SSL Socket for " + packet.daddr + "::" + packet.dport);
+                return;
+            }
+
+            sslSocket.setEnabledProtocols(sslSocket.getSupportedProtocols());
+            sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
+
+            try
+            {
+                sslSocket.startHandshake();
+            } catch (IOException e)
+            {
+                Log.e(TAG_TLS, "Unable to start Handshake " + packet.daddr + "::" + packet.dport);
+                return;
+            }
+
+            SSLSession session = sslSocket.getSession();
+            String ciphersuite = session.getCipherSuite();
+            String protocol = session.getProtocol();
+            try
+            {
+                if (!sslSocket.isClosed())
+                    sslSocket.close();
+            } catch (IOException e)
+            {
+                Log.e(TAG_TLS, "Failed to close Socket for " +  packet.daddr + "::" + packet.dport);
+            }
+
+            if(!DatabaseHelper.getInstance(getApplicationContext()).hostexists(packet.daddr, packet.dport))
+                DatabaseHelper.getInstance(getApplicationContext()).insertHost(packet.daddr, packet.dport, host.getHostName(), ciphersuite, protocol);
+
+        }
+
+
         private void getSupportedCipherSuits(Packet packet)
         {
             InetAddress host = null;

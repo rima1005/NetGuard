@@ -12,6 +12,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,6 +32,8 @@ public class ActivityCipher extends AppCompatActivity {
         String dnsAddress = "";
 
         int hostId = -1;
+        String defaultCipher = "";
+        String defaultProtocol = "";
 
         Cursor dnslookup = DatabaseHelper.getInstance(getApplicationContext()).getAccessDnsAllowed(address);
         if(dnslookup.moveToFirst())
@@ -43,7 +46,22 @@ public class ActivityCipher extends AppCompatActivity {
 
         Cursor host = DatabaseHelper.getInstance(getApplicationContext()).getHost(finalName, port);
         if(host.moveToFirst())
+        {
             hostId = host.getInt(host.getColumnIndex("ID"));
+            defaultCipher = host.getString(host.getColumnIndex("suit"));
+            defaultProtocol = host.getString(host.getColumnIndex("protocol"));
+        }
+
+        TextView handshakeDetails = findViewById(R.id.tvHandshakeDetails);
+        if(defaultCipher == null || defaultCipher == "" && defaultProtocol == null || defaultProtocol == "")
+        {
+            handshakeDetails.setText("The server seems to have certificate pinning or refused the TLS connection for other reasions!");
+        }
+        else
+        {
+            handshakeDetails.setText(defaultProtocol + " with " + defaultCipher);
+        }
+
 
         Cursor suits = null;
         Cursor protocols = null;
@@ -83,9 +101,6 @@ public class ActivityCipher extends AppCompatActivity {
         lvSuits.setAdapter(suitsAdapter);
         lvProtocols.setAdapter(protocolsAdapter);
 
-        ListUtils.setDynamicHeight(lvSuits);
-        ListUtils.setDynamicHeight(lvProtocols);
-
         lvSuits.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -93,26 +108,5 @@ public class ActivityCipher extends AppCompatActivity {
                 startActivity(webInfo);
             }
         });
-    }
-
-    public static class ListUtils {
-        public static void setDynamicHeight(ListView mListView) {
-            ListAdapter mListAdapter = mListView.getAdapter();
-            if (mListAdapter == null) {
-                // when adapter is null
-                return;
-            }
-            int height = 0;
-            int desiredWidth = View.MeasureSpec.makeMeasureSpec(mListView.getWidth(), View.MeasureSpec.UNSPECIFIED);
-            for (int i = 0; i < mListAdapter.getCount(); i++) {
-                View listItem = mListAdapter.getView(i, null, mListView);
-                listItem.measure(desiredWidth, View.MeasureSpec.UNSPECIFIED);
-                height += listItem.getMeasuredHeight();
-            }
-            ViewGroup.LayoutParams params = mListView.getLayoutParams();
-            params.height = height + (mListView.getDividerHeight() * (mListAdapter.getCount() - 1));
-            mListView.setLayoutParams(params);
-            mListView.requestLayout();
-        }
     }
 }

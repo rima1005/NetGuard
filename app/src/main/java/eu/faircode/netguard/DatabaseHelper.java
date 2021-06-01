@@ -46,7 +46,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = "NetGuard.Database";
 
     private static final String DB_NAME = "Netguard";
-    private static final int DB_VERSION = 23;
+    private static final int DB_VERSION = 24;
 
     private static boolean once = true;
     private static List<LogChangedListener> logChangedListeners = new ArrayList<>();
@@ -237,6 +237,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ", host TEXT NOT NULL" +
                 ", port TEXT NOT NULL" +
                 ", hostname TEXT" +
+                ", protocol TEXT" +
+                ", suit TEXT" +
                 ");");
         db.execSQL("CREATE UNIQUE INDEX idx_host ON hosts(host, port)");
     }
@@ -427,6 +429,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE hosts ADD COLUMN hostname TEXT");
                 oldVersion = 23;
             }
+            if (oldVersion < 24)
+            {
+                db.execSQL("ALTER TABLE hosts ADD COLUMN suit TEXT");
+                db.execSQL("ALTER TABLE hosts ADD COLUMN protocol TEXT");
+                oldVersion = 24;
+            }
 
             if (oldVersion == DB_VERSION) {
                 db.setVersion(oldVersion);
@@ -444,6 +452,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void insertHost(String daddr, int port, String hostname)
     {
+        insertHost(daddr, port, hostname, null, null);
+    }
+
+    public void insertHost(String daddr, int port, String hostname, String ciphersuite, String protocol)
+    {
         lock.writeLock().lock();
         try{
             SQLiteDatabase db = this.getWritableDatabase();
@@ -453,6 +466,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 cv.put("host", daddr);
                 cv.put("port", port);
                 cv.put("hostname", hostname);
+                if(ciphersuite != null)
+                    cv.put("suit", ciphersuite);
+                if(protocol != null)
+                    cv.put("protocol", protocol);
                 if(db.insert("hosts", null, cv) == -1)
                     Log.e(TAG, "Insert Host failed!");
 

@@ -13,6 +13,29 @@
         android:padding="10dip">
 
         <TextView
+            android:id="@+id/tvHandshakeTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="10dp"
+            android:text="Handshake done with"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_vertical"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+
+        <TextView
+            android:id="@+id/tvHandshakeDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:padding="10dp"
+            android:textSize="15sp"
+            app:layout_constraintVertical_chainStyle="packed"
+            tools:text="TLS 1.2 - TLS_ECDHS" />
+
+
+        <TextView
             android:id="@+id/tvTitleProtocols"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -26,7 +49,7 @@
         <ListView
             android:id="@+id/lvDetailsProtocols"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:padding="10dp"
             android:text="TextView"
             app:layout_constraintTop_toBottomOf="@+id/tvTitleProtocols" />
@@ -45,7 +68,7 @@
         <ListView
             android:id="@+id/lvDetailsCipherSuits"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="250dp"
             android:padding="10dp"
             android:text="TextView"
             app:layout_constraintTop_toBottomOf="@+id/tvTitleCipherSuits"/>
